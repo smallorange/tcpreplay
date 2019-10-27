@@ -30,6 +30,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
+#include <pthread.h>
+
+#include <unistd.h>
+#include <sys/stat.h>
+
 
 #include "tcpreplay.h"
 #include "tcpreplay_api.h"
@@ -52,17 +57,55 @@ tcpedit_t *tcpedit;
 int debug = 0;
 #endif
 
+COUNTER realtime_speed = 0;
+
 tcpreplay_t *ctx;
 
 static void flow_stats(const tcpreplay_t *ctx);
+
+void *fifo_read_thread(void *argv)
+{
+    int fd1;
+    int tmpspeed;
+    // FIFO file path
+    char *myfifo = "/tmp/myfifo";
+
+    // Creating the named file(FIFO)
+    // mkfifo(<pathname>,<permission>)
+    mkfifo(myfifo, 0666);
+
+    char str1[80], str2[80];
+    while (1)
+    {
+        // First open in read only and read
+        fd1 = open(myfifo, O_RDONLY);
+        if(read(fd1, str1, 80) > 0)
+        {
+            tmpspeed = atof(str1);
+            if(tmpspeed > 0)
+            {
+                realtime_speed = (COUNTER)(tmpspeed * 1000000.0);
+            }
+        }
+
+
+        // Print the read string and close
+        printf("User1: %lld\n", realtime_speed);
+    }
+}
 
 int
 main(int argc, char *argv[])
 {
     int i, optct = 0;
     int rcode;
+    pthread_t fifo_thread;
 
-    fflush(NULL);
+    //fflush(NULL);
+    /*start command thread*/
+    pthread_create(&fifo_thread, NULL,
+                   &fifo_read_thread, NULL);
+    pthread_detach(fifo_thread);
 
     ctx = tcpreplay_init();
 #ifdef TCPREPLAY
@@ -72,6 +115,8 @@ main(int argc, char *argv[])
 #endif
     argc -= optct;
     argv += optct;
+
+    
 
     fflush(NULL);
     rcode = tcpreplay_post_args(ctx, argc);
@@ -134,6 +179,8 @@ main(int argc, char *argv[])
 
     /* init the signal handlers */
     init_signal_handlers();
+
+   
 
     /* main loop */
     rcode = tcpreplay_replay(ctx);

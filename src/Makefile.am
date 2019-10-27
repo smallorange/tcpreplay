@@ -62,7 +62,7 @@ bin_PROGRAMS += tcpliveplay
 man_MANS += tcpliveplay.1
 endif
 
-tcpreplay_edit_CFLAGS = $(LIBOPTS_CFLAGS) -I$(srcdir)/.. -I$(srcdir)/tcpedit $(LNAV_CFLAGS) @LDNETINC@ -DTCPREPLAY -DTCPREPLAY_EDIT -DHAVE_CACHEFILE_SUPPORT
+tcpreplay_edit_CFLAGS = $(LIBOPTS_CFLAGS) -I$(srcdir)/.. -I$(srcdir)/tcpedit $(LNAV_CFLAGS) @LDNETINC@ -DTCPREPLAY -DTCPREPLAY_EDIT -DHAVE_CACHEFILE_SUPPORT -lpthread
 tcpreplay_edit_LDADD = ./tcpedit/libtcpedit.a ./common/libcommon.a $(LIBSTRL) @LPCAPLIB@ @LDNETLIB@ $(LIBOPTS_LDADD)
 tcpreplay_edit_SOURCES = tcpreplay_edit_opts.c send_packets.c signal_handler.c tcpreplay.c tcpreplay_api.c sleep.c replay.c
 tcpreplay_edit_OBJECTS: tcpreplay_opts.h
@@ -72,9 +72,9 @@ BUILT_SOURCES += tcpreplay_edit_opts.h
 tcpreplay_edit_opts.c: tcpreplay_opts.def
 	@AUTOGEN@ $(opts_list)  @NETMAPFLAGS@ -DTCPREPLAY_EDIT -b tcpreplay_edit_opts $<
 
-tcpreplay_CFLAGS = $(LIBOPTS_CFLAGS) -I$(srcdir)/.. $(LNAV_CFLAGS) @LDNETINC@ -DTCPREPLAY
+tcpreplay_CFLAGS = $(LIBOPTS_CFLAGS) -I$(srcdir)/.. $(LNAV_CFLAGS) @LDNETINC@ -DTCPREPLAY -lpthread
 tcpreplay_SOURCES = tcpreplay_opts.c send_packets.c signal_handler.c tcpreplay.c tcpreplay_api.c sleep.c replay.c
-tcpreplay_LDADD = ./common/libcommon.a $(LIBSTRL) @LPCAPLIB@ @LDNETLIB@ $(LIBOPTS_LDADD)
+tcpreplay_LDADD = ./common/libcommon.a $(LIBSTRL) @LPCAPLIB@ @LDNETLIB@ $(LIBOPTS_LDADD) -lpthread
 tcpreplay_OBJECTS: tcpreplay_opts.h
 tcpreplay_opts.h: tcpreplay_opts.c
 
@@ -83,13 +83,13 @@ tcpreplay_opts.c: tcpreplay_opts.def
 	@AUTOGEN@ $(opts_list) @NETMAPFLAGS@ $<
 
 if ENABLE_OSX_FRAMEWORKS
-tcpreplay_LDFLAGS = -framework CoreServices -framework Carbon
-tcpreplay_edit_LDFLAGS = -framework CoreServices -framework Carbon
+tcpreplay_LDFLAGS = -framework CoreServices -framework Carbon -lpthread
+tcpreplay_edit_LDFLAGS = -framework CoreServices -framework Carbon -lpthread
 endif
 
-tcpliveplay_CFLAGS = $(LIBOPTS_CFLAGS) -I$(srcdir)/.. $(LNAV_CFLAGS) -DTCPREPLAY -DTCPLIVEPLAY
+tcpliveplay_CFLAGS = $(LIBOPTS_CFLAGS) -I$(srcdir)/.. $(LNAV_CFLAGS) -DTCPREPLAY -DTCPLIVEPLAY -lpthread
 tcpliveplay_SOURCES = tcpliveplay_opts.c tcpliveplay.c
-tcpliveplay_LDADD = ./common/libcommon.a $(LIBSTRL) @LPCAPLIB@ @LDNETLIB@ $(LIBOPTS_LDADD)
+tcpliveplay_LDADD = ./common/libcommon.a $(LIBSTRL) @LPCAPLIB@ @LDNETLIB@ $(LIBOPTS_LDADD) -lpthread
 tcpliveplay_OBJECTS: tcpliveplay_opts.h
 tcpliveplay_opts.h: tcpliveplay_opts.c
 

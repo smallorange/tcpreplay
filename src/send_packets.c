@@ -65,6 +65,8 @@ extern tcpedit_t *tcpedit;
 extern int debug;
 #endif
 
+int realtime_speed;
+
 static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_time,
         struct timeval *last, COUNTER len,
         sendpacket_t *sp, COUNTER counter, timestamp_t *sent_timestamp,
@@ -1171,6 +1173,12 @@ static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_ts_delta,
             COUNTER bps = options->speed.speed;
             COUNTER bits_sent = ((ctx->stats.bytes_sent + len) * 8);
             COUNTER tx_us = now_us - start_us;
+
+            if(realtime_speed > 0)
+            {
+                bps = realtime_speed;
+                printf("bps: %lld configure: %lld", bps, options->speed.speed);
+            }
 
             /*
              * bits * 1000000 divided by bps = microseconds
