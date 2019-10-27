@@ -88,7 +88,7 @@ void *fifo_read_thread(void *argv)
             }
         }
 
-
+        memset(str1, 0, sizeof(str1));
         // Print the read string and close
         printf("User1: %lld\n", realtime_speed);
     }

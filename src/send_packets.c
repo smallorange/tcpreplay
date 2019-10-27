@@ -614,9 +614,14 @@ send_packets(tcpreplay_t *ctx, pcap_t *pcap, int idx)
              * This also sets skip_length and skip_packets which will avoid
              * timestamping for a given number of packets.
              */
+            if(realtime_speed > 0)
+            {
+                stats->start_time.tv_sec = 0;
+                stats->start_time.tv_usec = 0;
+            }
             calc_sleep_time(ctx, &stats->pkt_ts_delta, &stats->time_delta,
-                    pktlen, sp, packetnum, &stats->end_time,
-                    TIMEVAL_TO_MICROSEC(&stats->start_time), &skip_length);
+                                    pktlen, sp, packetnum, &stats->end_time,
+                                    TIMEVAL_TO_MICROSEC(&stats->start_time), &skip_length);
 
             /*
              * Track the time of the "last packet sent".
@@ -1177,7 +1182,13 @@ static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_ts_delta,
             if(realtime_speed > 0)
             {
                 bps = realtime_speed;
-                printf("bps: %lld configure: %lld", bps, options->speed.speed);
+                options->speed.speed = realtime_speed;
+                start_us = now_us;
+                tx_us = now_us - start_us;
+                realtime_speed = 0;
+                ctx->stats.bytes_sent = 0;
+                bits_sent = ((ctx->stats.bytes_sent + len) * 8);
+                printf("bps: %lld configure: %lld\n", bps, options->speed.speed);
             }
 
             /*
@@ -1185,6 +1196,7 @@ static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_ts_delta,
              *
              * ensure there is no overflow in cases where bits_sent is very high
              */
+            printf("bit send %lld, start_us %lld\n", bits_sent, start_us);
             if (bits_sent > COUNTER_OVERFLOW_RISK && bps > 500000)
                 next_tx_us = (bits_sent * 1000) / bps * 1000;
             else
@@ -1285,8 +1297,11 @@ static void tcpr_sleep(tcpreplay_t *ctx, sendpacket_t *sp,
     if (flush)
         wake_send_queues(sp, options);
 
+    if(nap_this_time->tv_sec > 0)
+        nap_this_time->tv_sec = 0;
+
     dbgx(2, "Sleeping:                   " TIMESPEC_FORMAT,
-            nap_this_time->tv_sec, nap_this_time->tv_nsec);
+         nap_this_time->tv_sec, nap_this_time->tv_nsec);
 
     /*
      * Depending on the accurate method & packet rate computation method
