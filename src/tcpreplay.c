@@ -60,13 +60,14 @@ int debug = 0;
 COUNTER realtime_speed = 0;
 
 tcpreplay_t *ctx;
+pthread_mutex_t conf_lock;
 
 static void flow_stats(const tcpreplay_t *ctx);
 
 void *fifo_read_thread(void *argv)
 {
     int fd1;
-    int tmpspeed;
+    double tmpspeed;
     // FIFO file path
     char *myfifo = "/tmp/myfifo";
 
@@ -84,13 +85,14 @@ void *fifo_read_thread(void *argv)
             tmpspeed = atof(str1);
             if(tmpspeed > 0)
             {
+                pthread_mutex_lock(&conf_lock);
                 realtime_speed = (COUNTER)(tmpspeed * 1000000.0);
+                printf("Input: %f Set: %lld\n", tmpspeed, realtime_speed);
+                pthread_mutex_unlock(&conf_lock);
             }
         }
-
         memset(str1, 0, sizeof(str1));
-        // Print the read string and close
-        printf("User1: %lld\n", realtime_speed);
+        // Print the read string and close       
     }
 }
 
@@ -103,8 +105,9 @@ main(int argc, char *argv[])
 
     //fflush(NULL);
     /*start command thread*/
+    pthread_mutex_init(&conf_lock, NULL);
     pthread_create(&fifo_thread, NULL,
-                   &fifo_read_thread, NULL);
+                       &fifo_read_thread, NULL);
     pthread_detach(fifo_thread);
 
     ctx = tcpreplay_init();

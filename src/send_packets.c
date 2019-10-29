@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "tcpreplay_api.h"
 #include "timestamp_trace.h"
@@ -66,6 +67,7 @@ extern int debug;
 #endif
 
 int realtime_speed;
+pthread_mutex_t conf_lock;
 
 static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_time,
         struct timeval *last, COUNTER len,
@@ -1181,11 +1183,13 @@ static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_ts_delta,
 
             if(realtime_speed > 0)
             {
+                pthread_mutex_lock(&conf_lock);
                 bps = realtime_speed;
                 options->speed.speed = realtime_speed;
                 start_us = now_us;
                 tx_us = now_us - start_us;
                 realtime_speed = 0;
+                pthread_mutex_unlock(&conf_lock);
                 ctx->stats.bytes_sent = 0;
                 bits_sent = ((ctx->stats.bytes_sent + len) * 8);
                 printf("bps: %lld configure: %lld\n", bps, options->speed.speed);
@@ -1196,7 +1200,7 @@ static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_ts_delta,
              *
              * ensure there is no overflow in cases where bits_sent is very high
              */
-            printf("bit send %lld, start_us %lld\n", bits_sent, start_us);
+            //printf("bit send %lld, start_us %lld\n", bits_sent, start_us);
             if (bits_sent > COUNTER_OVERFLOW_RISK && bps > 500000)
                 next_tx_us = (bits_sent * 1000) / bps * 1000;
             else
