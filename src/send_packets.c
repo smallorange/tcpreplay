@@ -66,7 +66,7 @@ extern tcpedit_t *tcpedit;
 extern int debug;
 #endif
 
-int realtime_speed;
+COUNTER realtime_speed;
 pthread_mutex_t conf_lock;
 
 static void calc_sleep_time(tcpreplay_t *ctx, struct timeval *pkt_time,

@@ -76,10 +76,10 @@ void *fifo_read_thread(void *argv)
     mkfifo(myfifo, 0666);
 
     char str1[80], str2[80];
+    fd1 = open(myfifo, O_RDONLY);
     while (1)
     {
         // First open in read only and read
-        fd1 = open(myfifo, O_RDONLY);
         if(read(fd1, str1, 80) > 0)
         {
             tmpspeed = atof(str1);
